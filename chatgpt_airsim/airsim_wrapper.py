@@ -102,8 +102,16 @@ class AirSimWrapper:
         roll_rad = math.radians(roll)
         yaw_rad = math.radians(yaw)
 
+        # Get current camera pose to preserve position
+        camera_info = self.client.simGetCameraInfo(camera_name)
+        current_pose = camera_info.pose
+
+        # Create new orientation
         orientation = airsim.to_quaternion(pitch_rad, roll_rad, yaw_rad)
-        self.client.simSetCameraOrientation(camera_name, orientation)
+
+        # Create new pose with same position but new orientation
+        new_pose = airsim.Pose(current_pose.position, orientation)
+        self.client.simSetCameraPose(camera_name, new_pose)
 
     def get_camera_orientation(self, camera_name="front_center"):
         """Get current camera orientation, returns [pitch, roll, yaw] in degrees"""
