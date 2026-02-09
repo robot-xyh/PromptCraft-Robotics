@@ -1,6 +1,7 @@
 import airsim
 import math
 import numpy as np
+import cv2
 
 objects_dict = {
     "turbine1": "BP_Wind_Turbines_C_1",
@@ -61,3 +62,61 @@ class AirSimWrapper:
             object_names_ue = self.client.simListSceneObjects(query_string)
         pose = self.client.simGetObjectPose(object_names_ue[0])
         return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
+
+    def get_image(self, camera_name="front_center", image_type="scene"):
+        """Get camera image, returns numpy array (BGR format)"""
+        image_type_map = {
+            "scene": airsim.ImageType.Scene,
+            "depth": airsim.ImageType.DepthPerspective,
+            "segmentation": airsim.ImageType.Segmentation,
+            "infrared": airsim.ImageType.Infrared,
+        }
+        img_type = image_type_map.get(image_type, airsim.ImageType.Scene)
+
+        responses = self.client.simGetImages([
+            airsim.ImageRequest(camera_name, img_type, False, False)
+        ])
+
+        if responses and len(responses) > 0:
+            response = responses[0]
+            img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
+            img_bgr = img1d.reshape(response.height, response.width, 3)
+            return img_bgr
+        return None
+
+    def get_depth_image(self, camera_name="front_center"):
+        """Get depth image, returns numpy array with depth values"""
+        responses = self.client.simGetImages([
+            airsim.ImageRequest(camera_name, airsim.ImageType.DepthPerspective, True, False)
+        ])
+
+        if responses and len(responses) > 0:
+            response = responses[0]
+            depth = airsim.list_to_2d_float_array(response.image_data_float, response.width, response.height)
+            return depth
+        return None
+
+    def set_camera_orientation(self, camera_name, pitch, roll, yaw):
+        """Set camera orientation (in degrees)"""
+        pitch_rad = math.radians(pitch)
+        roll_rad = math.radians(roll)
+        yaw_rad = math.radians(yaw)
+
+        orientation = airsim.to_quaternion(pitch_rad, roll_rad, yaw_rad)
+        self.client.simSetCameraOrientation(camera_name, orientation)
+
+    def get_camera_orientation(self, camera_name="front_center"):
+        """Get current camera orientation, returns [pitch, roll, yaw] in degrees"""
+        camera_info = self.client.simGetCameraInfo(camera_name)
+        orientation_quat = camera_info.pose.orientation
+        pitch, roll, yaw = airsim.to_eularian_angles(orientation_quat)
+        return [math.degrees(pitch), math.degrees(roll), math.degrees(yaw)]
+
+    def save_image(self, filename, camera_name="front_center", image_type="scene"):
+        """Save image to file"""
+        img = self.get_image(camera_name, image_type)
+        if img is not None:
+            cv2.imwrite(filename, img)
+            return True
+        return False
+
