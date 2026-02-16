@@ -1,0 +1,61 @@
+Here are functions for drone control with sensor data collection.
+
+Basic drone control:
+aw.takeoff() - takes off the drone.
+aw.land() - lands the drone.
+aw.fly_to([x, y, z]) - flies the drone to the position.
+aw.fly_path(points) - flies the drone along the path.
+aw.get_drone_position() - returns current position as [X, Y, Z].
+aw.set_yaw(yaw) - sets yaw in degrees.
+aw.get_yaw() - returns current yaw in degrees.
+
+Sensor data functions:
+aw.get_imu_data() - returns IMU data dict: angular_velocity [x,y,z], linear_acceleration [x,y,z], orientation [w,x,y,z].
+aw.get_gps_data() - returns GPS data dict: latitude, longitude, altitude, velocity [x,y,z].
+aw.get_barometer_data() - returns barometer dict: altitude, pressure, qnh.
+aw.get_magnetometer_data() - returns magnetometer dict: magnetic_field [x,y,z].
+aw.get_distance_sensor_data(sensor_name) - returns distance sensor dict: distance, min_distance, max_distance.
+
+LiDAR functions:
+aw.get_lidar_data(lidar_name) - returns LiDAR data dict: point_cloud (Nx3 numpy array), pose, timestamp.
+aw.get_lidar_points(lidar_name) - returns point cloud as Nx3 numpy array directly.
+aw.save_lidar_pointcloud(filename, lidar_name) - saves point cloud to PLY file.
+
+Camera functions:
+aw.get_image(camera_name, image_type) - gets camera image as numpy array.
+aw.get_depth_image(camera_name) - gets depth image as numpy array.
+aw.save_image(filename, camera_name, image_type) - saves image to file.
+
+Camera names: front_center, front_right, front_left, bottom_center, back_center
+Image types: scene (RGB), depth, segmentation, infrared
+LiDAR names: LidarSensor1 (or as configured in settings.json)
+
+Data recording:
+aw.start_recording() - starts recording sensor data.
+aw.stop_recording() - stops recording sensor data.
+aw.is_recording() - returns True if recording is active.
+
+Example - collecting sensor data at waypoints:
+```python
+waypoints = [[0,0,-10], [10,0,-10], [10,10,-10]]
+data = []
+for wp in waypoints:
+    aw.fly_to(wp)
+    data.append({
+        'position': aw.get_drone_position(),
+        'imu': aw.get_imu_data(),
+        'gps': aw.get_gps_data(),
+        'image': aw.get_image()
+    })
+```
+
+Example - LiDAR scan:
+```python
+aw.fly_to([0, 0, -20])
+points = aw.get_lidar_points()
+print(f"Captured {len(points)} points")
+aw.save_lidar_pointcloud("scan.ply")
+```
+
+Axis conventions: forward = positive X, right = positive Y, up = positive Z.
+NED coordinate system: X=North, Y=East, Z=Down (negative Z = up in world frame).

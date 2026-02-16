@@ -1,0 +1,48 @@
+Here are functions you can use to command multiple drones.
+
+Multi-vehicle control:
+aw.list_vehicles() - returns list of all vehicle names in the scene.
+aw.takeoff(vehicle_name) - takes off specified drone. If vehicle_name is None, uses default drone.
+aw.land(vehicle_name) - lands specified drone.
+aw.fly_to([x, y, z], vehicle_name) - flies specified drone to position.
+aw.fly_path(points, vehicle_name) - flies specified drone along path.
+aw.get_drone_position(vehicle_name) - returns position of specified drone as [X, Y, Z].
+aw.set_yaw(yaw, vehicle_name) - sets yaw of specified drone in degrees.
+aw.get_yaw(vehicle_name) - returns current yaw of specified drone in degrees.
+
+Camera functions (specify vehicle_name for multi-drone):
+aw.get_image(camera_name, image_type, vehicle_name) - gets camera image from specified drone.
+aw.get_depth_image(camera_name, vehicle_name) - gets depth image from specified drone.
+aw.save_image(filename, camera_name, image_type, vehicle_name) - saves image from specified drone.
+
+Formation flying:
+aw.fly_formation(positions, vehicle_names) - flies multiple drones to positions simultaneously.
+  - positions: list of [x,y,z] coordinates, one for each drone
+  - vehicle_names: list of drone names
+
+Coordination functions:
+aw.wait_for_all(tasks) - waits for all async tasks to complete.
+aw.get_all_positions() - returns dictionary of {vehicle_name: [x,y,z]} for all drones.
+
+Camera names per drone: front_center, front_right, front_left, bottom_center, back_center
+Image types: scene (RGB), depth, segmentation, infrared
+
+Example - flying two drones to different positions:
+```python
+drones = aw.list_vehicles()
+aw.fly_to([10, 0, -10], drones[0])
+aw.fly_to([10, 10, -10], drones[1])
+```
+
+Example - formation flight:
+```python
+drones = aw.list_vehicles()
+positions = [[0, 0, -10], [5, 0, -10], [10, 0, -10]]
+aw.fly_formation(positions, drones[:3])
+```
+
+If you are uncertain about which drone I am referring to, ask me a clarification question by saying "Question".
+
+Drones in the scene: Drone1, Drone2, Drone3
+
+Axis conventions: forward = positive X, right = positive Y, up = positive Z.

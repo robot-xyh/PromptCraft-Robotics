@@ -1,0 +1,93 @@
+Here are functions for path planning and navigation with drone.
+
+Basic drone control:
+aw.takeoff() - takes off the drone.
+aw.land() - lands the drone.
+aw.fly_to([x, y, z]) - flies the drone to the position.
+aw.fly_path(points) - flies the drone along path (list of [x,y,z] points).
+aw.get_drone_position() - returns current position as [X, Y, Z].
+aw.set_yaw(yaw) - sets yaw in degrees.
+aw.get_yaw() - returns current yaw in degrees.
+aw.get_position(object_name) - returns position of named object.
+
+Path planning functions:
+aw.fly_path(points, velocity) - flies along path at specified velocity (m/s).
+aw.fly_path_smooth(points, velocity) - flies smooth curved path through waypoints.
+
+aw.plan_path(start, goal, obstacles) - plans collision-free path.
+  - start: [x,y,z] start position
+  - goal: [x,y,z] goal position
+  - obstacles: list of obstacle names to avoid
+  - Returns: list of waypoints
+
+aw.check_path_clear(start, end) - checks if straight path is obstacle-free.
+  - Returns: True if clear, False if blocked
+
+Navigation functions:
+aw.fly_to_object(object_name, offset) - flies to position relative to an object.
+  - offset: [x,y,z] offset from object position
+aw.follow_object(object_name, offset, duration) - follows moving object for duration seconds.
+aw.hover() - hovers at current position.
+aw.go_home() - returns to takeoff location.
+
+Collision avoidance:
+aw.get_collision_info() - returns collision info: has_collided, impact_point, object_name.
+aw.get_distance_to_obstacle(direction) - returns distance to nearest obstacle in given direction.
+  - direction: "front", "back", "left", "right", "up", "down"
+
+Geometric helpers:
+aw.calculate_distance(point1, point2) - returns Euclidean distance between points.
+aw.calculate_heading(from_point, to_point) - returns heading angle in degrees.
+aw.generate_circle_path(center, radius, altitude, num_points) - generates circular path.
+aw.generate_spiral_path(center, start_radius, end_radius, altitude, num_turns) - generates spiral.
+aw.generate_lawnmower_path(corner1, corner2, altitude, spacing) - generates survey pattern.
+
+Example - navigate around obstacles:
+```python
+# Get positions
+start = aw.get_drone_position()
+goal = aw.get_position("turbine1")
+goal[2] = -20  # Set altitude
+
+# Plan path avoiding towers
+path = aw.plan_path(start, goal, obstacles=["tower1", "tower2", "tower3"])
+
+# Execute path
+aw.fly_path(path, velocity=5)
+```
+
+Example - circular inspection path:
+```python
+target = aw.get_position("turbine1")
+path = aw.generate_circle_path(
+    center=[target[0], target[1]],
+    radius=15,
+    altitude=-25,
+    num_points=16
+)
+aw.fly_path_smooth(path, velocity=3)
+```
+
+Example - area survey:
+```python
+path = aw.generate_lawnmower_path(
+    corner1=[0, 0],
+    corner2=[100, 100],
+    altitude=-30,
+    spacing=10  # meters between passes
+)
+aw.fly_path(path, velocity=8)
+```
+
+Example - follow and inspect:
+```python
+# Fly to object with offset (10m behind and above)
+aw.fly_to_object("car", offset=[-10, 0, -5])
+# Set camera to look at object
+aw.set_yaw(aw.calculate_heading(aw.get_drone_position(), aw.get_position("car")))
+```
+
+Objects in scene:
+turbine1, turbine2, solarpanels, car, crowd, tower1, tower2, tower3.
+
+Axis conventions: forward = positive X, right = positive Y, up = positive Z.

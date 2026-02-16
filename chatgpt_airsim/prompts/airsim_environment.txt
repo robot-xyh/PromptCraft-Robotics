@@ -1,0 +1,91 @@
+Here are functions for environment and weather control in simulation.
+
+Basic drone control:
+aw.takeoff() - takes off the drone.
+aw.land() - lands the drone.
+aw.fly_to([x, y, z]) - flies the drone to the position.
+aw.get_drone_position() - returns current position as [X, Y, Z].
+
+Weather control:
+aw.enable_weather(enabled) - enables/disables weather system.
+aw.set_weather(weather_type, intensity) - sets weather effect intensity (0.0 to 1.0).
+  Weather types:
+  - "rain" - rain effect
+  - "snow" - snow effect
+  - "fog" - fog/mist effect
+  - "dust" - dust storm
+  - "road_wetness" - wet road surface
+  - "road_snow" - snow on roads
+  - "maple_leaf" - falling leaves
+  - "road_leaf" - leaves on roads
+
+aw.set_wind(x, y, z) - sets wind velocity in m/s (NED coordinates).
+aw.get_wind() - returns current wind as [x, y, z].
+
+Time of day:
+aw.set_time_of_day(hour, minute) - sets simulation time (0-23 hours).
+aw.enable_time_progression(enabled, speed) - enables time progression.
+  - speed: multiplier (e.g., 60 = 1 min real time = 1 hour sim time)
+
+Simulation control:
+aw.pause() - pauses the simulation.
+aw.resume() - resumes the simulation.
+aw.reset() - resets simulation to initial state.
+aw.set_clock_speed(speed) - sets simulation speed (1.0 = real time, 2.0 = 2x speed).
+
+Object manipulation:
+aw.get_position(object_name) - returns object position [x, y, z].
+aw.set_object_position(object_name, [x, y, z]) - moves object to position.
+aw.set_object_scale(object_name, [sx, sy, sz]) - scales object.
+aw.spawn_object(name, asset_name, [x, y, z]) - spawns new object.
+aw.destroy_object(object_name) - removes object from scene.
+aw.list_objects() - returns list of all object names in scene.
+
+Camera functions:
+aw.get_image(camera_name, image_type) - gets camera image.
+aw.save_image(filename, camera_name, image_type) - saves image.
+
+Example - weather testing:
+```python
+# Enable weather system
+aw.enable_weather(True)
+
+# Test different weather conditions
+conditions = [
+    ("clear", {"rain": 0, "fog": 0}),
+    ("rainy", {"rain": 0.7, "fog": 0.2}),
+    ("foggy", {"rain": 0, "fog": 0.8}),
+    ("stormy", {"rain": 1.0, "fog": 0.3, "dust": 0.2})
+]
+
+for name, weather in conditions:
+    for w_type, intensity in weather.items():
+        aw.set_weather(w_type, intensity)
+    aw.save_image(f"weather_{name}.png")
+```
+
+Example - wind testing:
+```python
+# Test flight in different wind conditions
+wind_speeds = [0, 5, 10, 15]  # m/s
+
+for speed in wind_speeds:
+    aw.set_wind(speed, 0, 0)  # Wind from north
+    aw.fly_to([50, 0, -20])
+    print(f"Wind {speed}m/s: Position = {aw.get_drone_position()}")
+    aw.fly_to([0, 0, -20])  # Return
+```
+
+Example - time lapse:
+```python
+# Capture images throughout the day
+for hour in range(6, 20, 2):  # 6 AM to 8 PM
+    aw.set_time_of_day(hour, 0)
+    aw.save_image(f"timelapse_{hour:02d}00.png")
+```
+
+Objects in scene:
+turbine1, turbine2, solarpanels, car, crowd, tower1, tower2, tower3.
+
+Axis conventions: forward = positive X, right = positive Y, up = positive Z.
+Wind uses NED: positive X = north wind, positive Y = east wind.

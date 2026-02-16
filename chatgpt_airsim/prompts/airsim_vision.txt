@@ -1,0 +1,85 @@
+Here are functions for computer vision tasks with drone.
+
+Basic drone control:
+aw.takeoff() - takes off the drone.
+aw.land() - lands the drone.
+aw.fly_to([x, y, z]) - flies the drone to the position.
+aw.get_drone_position() - returns current position as [X, Y, Z].
+aw.set_yaw(yaw) - sets yaw in degrees.
+
+Camera functions:
+aw.get_image(camera_name, image_type) - gets camera image as numpy array (H x W x 3 for RGB).
+aw.get_depth_image(camera_name) - gets depth image as numpy array (H x W, values in meters).
+aw.save_image(filename, camera_name, image_type) - saves image to file.
+aw.set_camera_orientation(camera_name, pitch, roll, yaw) - sets camera orientation in degrees.
+aw.get_camera_orientation(camera_name) - gets camera orientation [pitch, roll, yaw].
+
+Image types:
+- "scene" - RGB image
+- "depth" - depth values in meters
+- "segmentation" - semantic segmentation with object IDs
+- "infrared" - infrared image
+- "surface_normals" - surface normal vectors
+
+Segmentation functions:
+aw.get_segmentation_image(camera_name) - gets segmentation image with object IDs.
+aw.set_object_id(object_name, id) - sets segmentation ID (0-255) for an object.
+aw.set_object_id_regex(pattern, id) - sets ID for objects matching regex pattern.
+aw.get_object_id(object_name) - gets current segmentation ID of an object.
+
+Object Detection:
+aw.set_detection_filter(camera_name, radius_m, mesh_names) - sets up detection filter.
+aw.get_detections(camera_name) - gets detected objects with:
+  - name: object name
+  - box2D: {min: [x,y], max: [x,y]} in pixels
+  - box3D: {min: [x,y,z], max: [x,y,z]} in world coords
+  - relative_pose: position relative to camera
+aw.detect_objects(mesh_names, camera_name, radius_m) - detect and return in one call.
+aw.draw_detections(camera_name, save_path) - image with bounding boxes drawn.
+
+Stereo vision (if stereo cameras configured):
+aw.get_stereo_images() - returns (left_image, right_image) as numpy arrays.
+aw.get_disparity_image() - returns disparity/depth from stereo matching.
+
+Example - semantic segmentation:
+```python
+# Set unique IDs for different object types
+aw.set_object_id_regex("Car*", 10)
+aw.set_object_id_regex("Person*", 20)
+aw.set_object_id_regex("Building*", 30)
+
+# Capture segmentation image
+seg_img = aw.get_segmentation_image()
+# seg_img values correspond to object IDs
+```
+
+Example - object detection with depth:
+```python
+# Detect cars
+detections = aw.detect_objects(["Car*"])
+depth = aw.get_depth_image()
+
+for det in detections:
+    # Get center of bounding box
+    cx = (det['box2D']['min'][0] + det['box2D']['max'][0]) // 2
+    cy = (det['box2D']['min'][1] + det['box2D']['max'][1]) // 2
+    # Get depth at center
+    distance = depth[cy, cx]
+    print(f"{det['name']}: {distance:.2f}m away")
+```
+
+Example - multi-view capture:
+```python
+views = []
+for yaw in [0, 90, 180, 270]:
+    aw.set_yaw(yaw)
+    views.append({
+        'yaw': yaw,
+        'rgb': aw.get_image(),
+        'depth': aw.get_depth_image(),
+        'seg': aw.get_segmentation_image()
+    })
+```
+
+Camera names: front_center, front_right, front_left, bottom_center, back_center
+Axis conventions: forward = positive X, right = positive Y, up = positive Z.

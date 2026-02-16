@@ -1,0 +1,71 @@
+Here are functions for infrastructure inspection with drone.
+
+Basic drone control:
+aw.takeoff() - takes off the drone.
+aw.land() - lands the drone.
+aw.fly_to([x, y, z]) - flies the drone to the position.
+aw.fly_path(points) - flies the drone along the path.
+aw.get_drone_position() - returns current position as [X, Y, Z].
+aw.set_yaw(yaw) - sets yaw in degrees.
+aw.get_yaw() - returns current yaw in degrees.
+aw.get_position(object_name) - returns position of named object as [X, Y, Z].
+
+Inspection functions:
+aw.orbit(center, radius, altitude, speed, num_points) - flies circular orbit around a point.
+  - center: [x, y] coordinates of center point
+  - radius: orbit radius in meters
+  - altitude: flight altitude (negative = up)
+  - speed: flight speed in m/s
+  - num_points: number of waypoints in orbit (more = smoother)
+
+aw.inspect_object(object_name, distance, num_views) - captures images from multiple angles around an object.
+  - Returns list of images from different viewpoints
+  - distance: how far to position from object
+  - num_views: number of viewing angles (default 4)
+
+aw.survey_area(corner1, corner2, altitude, overlap) - flies lawnmower pattern over rectangular area.
+  - corner1, corner2: opposite corners [x, y] of survey area
+  - altitude: flight altitude (negative = up)
+  - overlap: image overlap percentage (0.0-1.0)
+
+Camera functions:
+aw.get_image(camera_name, image_type) - gets camera image as numpy array.
+aw.get_depth_image(camera_name) - gets depth image.
+aw.save_image(filename, camera_name, image_type) - saves image to file.
+aw.set_camera_orientation(camera_name, pitch, roll, yaw) - sets camera orientation in degrees.
+aw.get_camera_orientation(camera_name) - gets camera orientation [pitch, roll, yaw] in degrees.
+
+Object Detection:
+aw.detect_objects(mesh_names, camera_name, radius_m) - detects objects matching patterns.
+aw.draw_detections(camera_name, save_path) - gets image with detection boxes drawn.
+
+Example - turbine inspection:
+```python
+# Get turbine position
+pos = aw.get_position("turbine1")
+# Fly to inspection altitude
+aw.fly_to([pos[0], pos[1], -30])
+# Orbit around turbine
+aw.orbit(center=[pos[0], pos[1]], radius=15, altitude=-30, speed=3, num_points=12)
+# Capture detailed images
+images = aw.inspect_object("turbine1", distance=10, num_views=8)
+```
+
+Example - solar panel survey:
+```python
+pos = aw.get_position("solarpanels")
+# Survey area around solar panels
+aw.survey_area(
+    corner1=[pos[0]-20, pos[1]-20],
+    corner2=[pos[0]+20, pos[1]+20],
+    altitude=-15,
+    overlap=0.3
+)
+```
+
+Infrastructure objects in scene:
+turbine1, turbine2 - wind turbines
+solarpanels - solar panel array
+tower1, tower2, tower3 - transmission towers
+
+Axis conventions: forward = positive X, right = positive Y, up = positive Z.
